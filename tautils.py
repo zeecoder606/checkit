@@ -412,7 +412,7 @@ def do_dialog(dialog, suffix, load_save_folder):
         dialog.set_current_folder(load_save_folder)
 
     response = dialog.run()
-    if response == Gtk.ResponseType:
+    if response == Gtk.ResponseType.OK:
         result = dialog.get_filename()
         load_save_folder = dialog.get_current_folder()
     dialog.destroy()
@@ -957,7 +957,7 @@ def power_manager_off(status):
     OHM_SERVICE_IFACE = 'org.freedesktop.ohm.Keystore'
     PATH = '/etc/powerd/flags/inhibit-suspend'
 
-    client = GConf.Client_get_default()
+    client = GConf.Client.get_default()
 
     ACTUAL_POWER = True
 
