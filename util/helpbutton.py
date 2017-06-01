@@ -101,7 +101,7 @@ def add_section(help_box, section_text, icon=None):
 def add_paragraph(help_box, text, icon=None):
     ''' Add an entry to the help palette. From helpbutton.py by
     Gonzalo Odiard '''
-    max_text_width = int(Gdk.screen_width() / 3) - 20
+    max_text_width = int(Gdk.Screen.width() / 3) - 20
     hbox = Gtk.HBox()
     label = Gtk.Label(text)
     label.set_justify(Gtk.Justification.LEFT)
@@ -118,3 +118,4 @@ def add_paragraph(help_box, text, icon=None):
     help_box.pack_start(hbox, False, False, padding=5)
 
     return hbox
+

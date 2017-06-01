@@ -19,19 +19,19 @@
 from gi.repository import GObject
 
 
-class ConfigFile(Gobject.GObject):
+class ConfigFile(GObject.GObject):
 
     """Load/save a simple (key = value) config file"""
 
     __gsignals__ = {
-        'configuration-loaded': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'configuration-loaded': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                  ()),
-        'configuration-saved': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'configuration-saved': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                 ()),
     }
 
     def __init__(self, config_file_path, valid_keys={}):
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self._config_file_path = config_file_path
         self._valid_keys = valid_keys

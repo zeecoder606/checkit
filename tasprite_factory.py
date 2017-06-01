@@ -21,7 +21,6 @@
 # THE SOFTWARE.
 
 import os
-
 from gi.repository import GdkPixbuf
 
 from taconstants import HIT_RED, HIT_GREEN, HIDE_WHITE, SHOW_WHITE, \
@@ -1616,7 +1615,7 @@ if __name__ == "__main__":
 
 def svg_str_to_pixbuf(svg_string):
     """ Load pixbuf from SVG string """
-    pl = GdkPixbuf.PixbufLoader('svg')
+    pl = GdkPixbuf.PixbufLoader()
     pl.write(svg_string)
     pl.close()
     pixbuf = pl.get_pixbuf()

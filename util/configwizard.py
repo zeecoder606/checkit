@@ -15,7 +15,8 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-from .configfile import ConfigFile
+from configfile import ConfigFile
+
 from gi.repository import Gtk
 
 
@@ -217,3 +218,4 @@ if __name__ == "__main__":
     # test_wizard_from_config_file_obj("/tmp/configwizard.test.0001")
     test_wizard_from_config_file_path("/tmp/configwizard.test.0002")
     Gtk.main()
+

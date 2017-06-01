@@ -34,11 +34,13 @@ import tempfile
 import subprocess
 
 import gi
-gi.require_version("Gtk" , "3.0")
+gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk
 from gi.repository import Gdk
-from gi.repository import Gobject
+from gi.repository import GObject
 from gi.repository import GdkPixbuf
+
 try:
     # Try to use XDG Base Directory standard for config files.
     import xdg.BaseDirectory
@@ -66,7 +68,7 @@ from TurtleArt.taprimitive import PyExportError
 from TurtleArt.taplugin import (load_a_plugin, cancel_plugin_install,
                                 complete_plugin_install)
 
-from util.menubuilder import make_menu_item, make_sub_menu, make_checkmenu_item
+from util.menubuilder import MenuBuilder
 
 
 class TurtleMain():
@@ -135,8 +137,10 @@ class TurtleMain():
 
     def _get_gconf_settings(self):
         try:
-            import gconf
-            self.client = Gconf.Client_get_default()
+            from gi.repository import GConf
+            if hasattr(GConf.Client, "get_default"):
+                self.client = GConf.Client.get_default()
+
         except ImportError:
             pass
 
@@ -191,9 +195,12 @@ return %s(self)" % (p, P, P)
 
     def _makepath(self, path):
         ''' Make a path if it doesn't previously exist '''
-        dpath = os.path.normpath(os.path.dirname(path))
-        if not os.path.exists(dpath):
-            os.makedirs(dpath)
+        from os import makedirs
+        from os.path import normpath, dirname, exists
+
+        dpath = normpath(dirname(path))
+        if not exists(dpath):
+            makedirs(dpath)
 
     def _start_gtk(self):
         ''' Get a main window set up. '''
@@ -203,8 +210,8 @@ return %s(self)" % (p, P, P)
         if self._ta_file is None:
             self.tw.load_start()
         else:
-            self.win.get_window().set_cursor(Gdk.Cursor(Gdk.CursomType.WATCH))
-            Gobject.idle_add(self._project_loader, self._ta_file)
+            self.win.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.WATCH))
+            GObject.idle_add(self._project_loader, self._ta_file)
         self._set_gconf_overrides()
         Gtk.main()
 
@@ -236,10 +243,10 @@ return %s(self)" % (p, P, P)
             surface = cr.get_target()
         self.turtle_canvas = surface.create_similar(
             cairo.CONTENT_COLOR,
-            # max(1024, gtk.gdk.screen_width() * 2),
-            # max(768, gtk.gdk.screen_height() * 2))
-            Gdk.screen_width() * 2,
-            Gdk.screen_height() * 2)
+            # max(1024, Gdk.Screen.width() * 2),
+            # max(768, Gdk.Screen.height() * 2))
+            Gdk.Screen.width() * 2,
+            Gdk.Screen.height() * 2)
 
         # Make sure the autosave directory is writeable
         if is_writeable(self._share_path):
@@ -379,7 +386,7 @@ return %s(self)" % (p, P, P)
             if hasattr(self.get_window(), 'get_cursor'):
                 self.get_window().set_cursor(self._old_cursor)
             else:
-                self.get_window().set_cursor(Gdk.Curosr(Gdk.CursorType.LEFT_PTR))
+                self.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.LEFT_PTR))
 
     def _setup_gtk(self):
         ''' Set up a scrolled window in which to run Turtle Blocks. '''
@@ -400,28 +407,28 @@ return %s(self)" % (p, P, P)
 
         self.fixed = Gtk.Fixed()
         self.fixed.connect('size-allocate', self._fixed_resize_cb)
-        width = Gdk.screen_width() - 80
-        height = Gdk.screen_height() - 80
+        width = Gdk.Screen.width() - 80
+        height = Gdk.Screen.height() - 80
         self.fixed.set_size_request(width, height)
 
-        self.vbox = gtk.VBox(False, 0)
+        self.vbox = Gtk.VBox(False, 0)
         self.vbox.show()
 
         self.menu_bar = self._get_menu_bar()
-        self.vbox.pack_start(self.menu_bar, False, False)
+        self.vbox.pack_start(self.menu_bar, False, False, 0)
         self.menu_bar.show()
-        self.menu_height = self.menu_bar.size_request()[1]
+        self.menu_height = self.menu_bar.get_size_request()[1]
 
         self.sw = Gtk.ScrolledWindow()
         self.sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.sw.show()
         canvas = Gtk.DrawingArea()
-        width = Gdk.screen_width() * 2
-        height = Gdk.screen_height() * 2
+        width = Gdk.Screen.width() * 2
+        height = Gdk.Screen.height() * 2
         canvas.set_size_request(width, height)
         self.sw.add_with_viewport(canvas)
         canvas.show()
-        self.vbox.pack_end(self.sw, True, True,0)
+        self.vbox.pack_end(self.sw, True, True, 0)
         self.fixed.put(self.vbox, 0, 0)
         self.fixed.show()
 
@@ -433,90 +440,88 @@ return %s(self)" % (p, P, P)
     def _get_menu_bar(self):
         ''' Instead of Sugar toolbars, use GNOME menus. '''
         menu = Gtk.Menu()
-        make_menu_item(menu, _('New'), self._do_new_cb)
-        make_menu_item(menu, _('Show sample projects'),
+        MenuBuilder.make_menu_item(menu, _('New'), self._do_new_cb)
+        MenuBuilder.make_menu_item(menu, _('Show sample projects'),
                                    self._create_store)
-        make_menu_item(menu, _('Open'), self._do_open_cb)
-        make_menu_item(menu, _('Add project'), self._do_load_cb)
-        make_menu_item(menu, _('Load plugin'),
+        MenuBuilder.make_menu_item(menu, _('Open'), self._do_open_cb)
+        MenuBuilder.make_menu_item(menu, _('Add project'), self._do_load_cb)
+        MenuBuilder.make_menu_item(menu, _('Load plugin'),
                                    self._do_load_plugin_cb)
-        make_menu_item(menu, _('Save'), self._do_save_cb)
-        make_menu_item(menu, _('Save as'), self._do_save_as_cb)
+        MenuBuilder.make_menu_item(menu, _('Save'), self._do_save_cb)
+        MenuBuilder.make_menu_item(menu, _('Save as'), self._do_save_as_cb)
 
         # export submenu
         export_submenu = Gtk.Menu()
-        export_menu = make_sub_menu(export_submenu, _('Export as'))
+        export_menu = MenuBuilder.make_sub_menu(export_submenu, _('Export as'))
         menu.append(export_menu)
 
-        make_menu_item(export_submenu, _('image'),
+        MenuBuilder.make_menu_item(export_submenu, _('image'),
                                    self._do_save_picture_cb)
-        make_menu_item(export_submenu, _('image (blocks)'),
-                                   self._do_save_blocks_image_cb)
-        make_menu_item(export_submenu, _('SVG'),
+        MenuBuilder.make_menu_item(export_submenu, _('SVG'),
                                    self._do_save_svg_cb)
-        make_menu_item(export_submenu, _('icon'),
+        MenuBuilder.make_menu_item(export_submenu, _('icon'),
                                    self._do_save_as_icon_cb)
         # TRANS: ODP is Open Office presentation
-        make_menu_item(export_submenu, _('ODP'),
+        MenuBuilder.make_menu_item(export_submenu, _('ODP'),
                                    self._do_save_as_odp_cb)
-        make_menu_item(export_submenu, _('Logo'),
+        MenuBuilder.make_menu_item(export_submenu, _('Logo'),
                                    self._do_save_logo_cb)
-        make_menu_item(export_submenu, _('Python'),
+        MenuBuilder.make_menu_item(export_submenu, _('Python'),
                                    self._do_save_python_cb)
-        make_menu_item(menu, _('Quit'), self._quit_ta)
-        activity_menu = make_sub_menu(menu, _('File'))
+        MenuBuilder.make_menu_item(menu, _('Quit'), self._quit_ta)
+        activity_menu = MenuBuilder.make_sub_menu(menu, _('File'))
 
         menu = Gtk.Menu()
-        make_menu_item(menu, _('Cartesian coordinates'),
+        MenuBuilder.make_menu_item(menu, _('Cartesian coordinates'),
                                    self._do_cartesian_cb)
-        make_menu_item(menu, _('Polar coordinates'),
+        MenuBuilder.make_menu_item(menu, _('Polar coordinates'),
                                    self._do_polar_cb)
-        self.coords = make_checkmenu_item(
+        self.coords = MenuBuilder.make_checkmenu_item(
             menu, _('Rescale coordinates'),
             self._do_rescale_cb, status=False)
-        make_menu_item(menu, _('Grow blocks'),
+        MenuBuilder.make_menu_item(menu, _('Grow blocks'),
                                    self._do_resize_cb, 1.5)
-        make_menu_item(menu, _('Shrink blocks'),
+        MenuBuilder.make_menu_item(menu, _('Shrink blocks'),
                                    self._do_resize_cb, 0.667)
-        make_menu_item(menu, _('Reset block size'),
+        MenuBuilder.make_menu_item(menu, _('Reset block size'),
                                    self._do_resize_cb, -1)
-        self.hover = make_checkmenu_item(
+        self.hover = MenuBuilder.make_checkmenu_item(
             menu, _('Turn on hover help'),
             self._do_toggle_hover_help_cb, status=True)
-        view_menu = make_sub_menu(menu, _('View'))
+        view_menu = MenuBuilder.make_sub_menu(menu, _('View'))
 
         menu = Gtk.Menu()
-        make_menu_item(menu, _('Copy'), self._do_copy_cb)
-        make_menu_item(menu, _('Paste'), self._do_paste_cb)
-        make_menu_item(menu, _('Save stack'),
+        MenuBuilder.make_menu_item(menu, _('Copy'), self._do_copy_cb)
+        MenuBuilder.make_menu_item(menu, _('Paste'), self._do_paste_cb)
+        MenuBuilder.make_menu_item(menu, _('Save stack'),
                                    self._do_save_macro_cb)
-        make_menu_item(menu, _('Delete stack'),
+        MenuBuilder.make_menu_item(menu, _('Delete stack'),
                                    self._do_delete_macro_cb)
-        edit_menu = make_sub_menu(menu, _('Edit'))
+        edit_menu = MenuBuilder.make_sub_menu(menu, _('Edit'))
 
         menu = Gtk.Menu()
-        make_menu_item(menu, _('Show palette'),
+        MenuBuilder.make_menu_item(menu, _('Show palette'),
                                    self._do_palette_cb)
-        make_menu_item(menu, _('Hide palette'),
+        MenuBuilder.make_menu_item(menu, _('Hide palette'),
                                    self._do_hide_palette_cb)
-        make_menu_item(menu, _('Show/hide blocks'),
+        MenuBuilder.make_menu_item(menu, _('Show/hide blocks'),
                                    self._do_hideshow_cb)
-        tool_menu = make_sub_menu(menu, _('Tools'))
+        tool_menu = MenuBuilder.make_sub_menu(menu, _('Tools'))
 
         menu = Gtk.Menu()
-        make_menu_item(menu, _('Clean'), self._do_eraser_cb)
-        make_menu_item(menu, _('Run'), self._do_run_cb)
-        make_menu_item(menu, _('Step'), self._do_step_cb)
-        make_menu_item(menu, _('Debug'), self._do_trace_cb)
-        make_menu_item(menu, _('Stop'), self._do_stop_cb)
-        turtle_menu = make_sub_menu(menu, _('Turtle'))
+        MenuBuilder.make_menu_item(menu, _('Clean'), self._do_eraser_cb)
+        MenuBuilder.make_menu_item(menu, _('Run'), self._do_run_cb)
+        MenuBuilder.make_menu_item(menu, _('Step'), self._do_step_cb)
+        MenuBuilder.make_menu_item(menu, _('Debug'), self._do_trace_cb)
+        MenuBuilder.make_menu_item(menu, _('Stop'), self._do_stop_cb)
+        turtle_menu = MenuBuilder.make_sub_menu(menu, _('Turtle'))
 
         self._plugin_menu = Gtk.Menu()
-        plugin_men = make_sub_menu(self._plugin_menu, _('Plugins'))
+        plugin_men = MenuBuilder.make_sub_menu(self._plugin_menu, _('Plugins'))
 
         menu = Gtk.Menu()
-        make_menu_item(menu, _('About...'), self._do_about_cb)
-        help_menu = make_sub_menu(menu, _('Help'))
+        MenuBuilder.make_menu_item(menu, _('About...'), self._do_about_cb)
+        help_menu = MenuBuilder.make_sub_menu(menu, _('Help'))
 
         menu_bar = Gtk.MenuBar()
         menu_bar.append(activity_menu)
@@ -541,13 +546,13 @@ return %s(self)" % (p, P, P)
         project_empty = self.tw.is_project_empty()
         if not project_empty:
             resp = self._show_save_dialog(e is None)
-            if resp == Gtk.ResponeType.YES:
+            if resp == Gtk.ResponseType.YES:
                 if self.tw.is_new_project():
                     self._save_as()
                 else:
                     if self.tw.project_has_changed():
                         self._save_changes()
-            elif resp == Gtk.ResponeType.CANCEL:
+            elif resp == Gtk.ResponseType.CANCEL:
                 return
 
         if hasattr(self, 'client'):
@@ -558,14 +563,10 @@ return %s(self)" % (p, P, P)
                 plugin.quit()
 
         # Clean up temporary files
-        try:
+        if os.path.exists(TMP_SVG_PATH):
             os.remove(TMP_SVG_PATH)
-        except:
-            pass
-        try:
+        if os.path.exists(TMP_ODP_PATH):
             os.remove(TMP_ODP_PATH)
-        except:
-            pass
 
         Gtk.main_quit()
         exit()
@@ -602,7 +603,7 @@ Would you like to save before quitting?'))
         dlg.destroy()
 
         if resp is Gtk.ResponseType.OK:
-            complete_plugin_install(self, tmp_dir, tmp_path, plugin_path,
+            complete_plugin_install(tmp_dir, tmp_path, plugin_path,
                                     plugin_name, file_info)
         elif resp is Gtk.ResponseType.CANCEL:
             cancel_plugin_install(tmp_dir)
@@ -682,10 +683,6 @@ Would you like to save before quitting?'))
         ''' Save changes to current project '''
         self.tw.save_file_name = self._ta_file
         self.tw.save_file(self.tw._loaded_project)
-
-    def _do_save_blocks_image_cb(self, widget):
-        ''' Callback for save blocks as image. '''
-        self.tw.save_blocks_as_image()
 
     def _do_save_picture_cb(self, widget):
         ''' Callback for save canvas. '''
@@ -922,8 +919,8 @@ Would you like to save before quitting?'))
         self.tw.copying_blocks = False
         self.tw.saving_blocks = False
         self.tw.deleting_blocks = False
-        self.win.get_window().set_cursorGdk.Cursor(Gdk.CursorType.LEFT_PTR))
-        clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+        self.win.get_window().set_cursor(Gdk.Cursor(Gdk.CursorType.LEFT_PTR))
+        clipboard = Gtk.Clipboard()
         text = clipboard.wait_for_text()
         if text is not None:
             if self.tw.selected_blk is not None and \
@@ -1078,11 +1075,15 @@ Would you like to save before quitting?'))
             store.append([pixbuf, filepath])
 
     def _scan_for_samples(self):
-        path = os.path.join(self._share_path, 'samples', 'thumbnails')
+        path = os.path.join(self._share_path, "samples/thumbnails")
         samples = []
         for name in os.listdir(path):
             if name.endswith(".png"):
-                samples.append(os.path.join(path, name))
+                samples.append(os.path.join(self._share_path, name))
+
         samples.sort()
         return samples
 
+
+if __name__ == '__main__':
+    TurtleMain()

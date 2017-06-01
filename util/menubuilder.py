@@ -20,39 +20,44 @@ from gi.repository import Gtk
 MENUBAR = {}
 
 
-def get_sub_menu_by_name(name):
-    if name in MENUBAR:
-        return MENUBAR[name]
-    else:
-        return None
+class MenuBuilder():
 
-def make_sub_menu(menu, name):
-    """ add a new submenu to the toolbar """
-    sub_menu = Gtk.MenuItem(name)
-    MENUBAR[name] = [menu, sub_menu]  # Maintain a dictionary
-    sub_menu.show()
-    sub_menu.set_submenu(menu)
-    return sub_menu
+    @classmethod
+    def get_sub_menu_by_name(cls, name):
+        if name in MENUBAR:
+            return MENUBAR[name]
+        else:
+            return None
 
-def make_menu_item(menu, tooltip, callback, arg=None):
-    """ add a new item to the submenu """
-    menu_items = Gtk.MenuItem(tooltip)
-    menu.append(menu_items)
-    if arg is None:
-        menu_items.connect('activate', callback)
-    else:
-        menu_items.connect('activate', callback, arg)
-    menu_items.show()
+    @classmethod
+    def make_sub_menu(cls, menu, name):
+        """ add a new submenu to the toolbar """
+        sub_menu = Gtk.MenuItem(name)
+        MENUBAR[name] = [menu, sub_menu]  # Maintain a dictionary
+        sub_menu.show()
+        sub_menu.set_submenu(menu)
+        return sub_menu
 
-def make_checkmenu_item(menu, tooltip, callback, status=True,
-                        arg=None):
-    menu_items = Gtk.CheckMenuItem(tooltip)
-    menu_items.set_active(status)
-    menu.append(menu_items)
-    if arg is None:
-        menu_items.connect('activate', callback)
-    else:
-        menu_items.connect('activate', callback, arg)
-    #menu_items.show()
-    return menu_items
+    @classmethod
+    def make_menu_item(cls, menu, tooltip, callback, arg=None):
+        """ add a new item to the submenu """
+        menu_items = Gtk.MenuItem(tooltip)
+        menu.append(menu_items)
+        if arg is None:
+            menu_items.connect('activate', callback)
+        else:
+            menu_items.connect('activate', callback, arg)
+        menu_items.show()
 
+    @classmethod
+    def make_checkmenu_item(cls, menu, tooltip, callback, status=True,
+                            arg=None):
+        menu_items = Gtk.CheckMenuItem(tooltip)
+        menu_items.set_active(status)
+        menu.append(menu_items)
+        if arg is None:
+            menu_items.connect('activate', callback)
+        else:
+            menu_items.connect('activate', callback, arg)
+        #menu_items.show()
+        return menu_items

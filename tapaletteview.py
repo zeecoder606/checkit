@@ -411,3 +411,4 @@ class PaletteView():
             buttons[3].set_layer(CATEGORY_LAYER)
         elif self.backgrounds[orientation].type == 'category-shift-vertical':
             buttons[4].set_layer(CATEGORY_LAYER)
+

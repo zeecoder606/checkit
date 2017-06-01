@@ -84,7 +84,6 @@ block_styles = {'basic-style': [],
                 'portfolio-style-1x2': []}
 
 
-
 from gi.repository import Gtk
 from gi.repository import Gdk
 
@@ -123,8 +122,8 @@ class Palette():
             help_palettes[self._name] = self._help_box
             help_windows[self._name] = Gtk.ScrolledWindow()
             help_windows[self._name].set_size_request(
-                int(Gdk.screen_width() / 3),
-                Gdk.screen_height() - GRID_CELL_SIZE * 3)
+                int(Gdk.Screen.width() / 3),
+                Gdk.Screen.height() - GRID_CELL_SIZE * 3)
             help_windows[self._name].set_policy(
                 Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             help_windows[self._name].add_with_viewport(

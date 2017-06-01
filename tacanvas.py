@@ -20,19 +20,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import cairo
 import os
+import cairo
+import base64
 
 from math import pi
+from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Pango
-from gi.repository import PangoCairo
 from gi.repository import GObject
-from tautils import get_path
-from taconstants import (Color, TMP_SVG_PATH, DEFAULT_PEN_COLOR, \
-                          DEFAULT_BACKGROUND_COLOR, DEFAULT_FONT
+from gi.repository import PangoCairo
+
+from sprites import Sprite
+from tasprite_factory import SVG
+from tautils import image_to_base64, get_path, data_to_string, round_int, \
+    debug_output
+
+from taconstants import (Color, TMP_SVG_PATH, DEFAULT_PEN_COLOR,
+                          DEFAULT_BACKGROUND_COLOR, DEFAULT_FONT)
 
 
 def wrap100(n):
@@ -120,6 +127,8 @@ class TurtleGraphics:
 
         # Build a cairo.Context from a cairo.XlibSurface
         self.canvas = cairo.Context(self.turtle_window.turtle_canvas)
+        self.canvas.set_line_cap(1)  # Set the line cap to be round
+
         self.set_pen_size(5)
 
     def setup_svg_surface(self):
@@ -330,19 +339,19 @@ class TurtleGraphics:
             fd.set_size(final_scale)
             pl.set_font_description(fd)
             if isinstance(label, (str, unicode)):
-               text = label.replace('\0', ' ')
+                text = label.replace('\0', ' ')
             elif isinstance(label, (float, int)):
-               text = str(label)
+                text = str(label)
             else:
-               text = label
-            
+                text = label
 
             pl.set_text(str(label), len(str(label)))
+
             pl.set_width(int(width) * Pango.SCALE)
             cc.save()
             cc.translate(x, y)
             cc.rotate(heading * DEGTOR)
-            cr.set_source_rgb(rgb[0] / 255., rgb[1] / 255., rgb[2] / 255.)
+            cc.set_source_rgb(rgb[0] / 255., rgb[1] / 255., rgb[2] / 255.)
             PangoCairo.update_layout(cc, pl)
             PangoCairo.show_layout(cc, pl)
             cc.restore()
@@ -444,3 +453,4 @@ class TurtleGraphics:
     def inval(self):
         ''' Invalidate a region for gtk '''
         self.turtle_window.inval_all()
+

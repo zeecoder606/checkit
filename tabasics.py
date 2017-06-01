@@ -112,6 +112,7 @@ from tatype import (TYPE_BOOL, TYPE_BOX, TYPE_CHAR, TYPE_COLOR, TYPE_FLOAT,
                      TYPE_STRING, TYPE_VECTOR)
 from taturtle import Turtle
 
+
 def _millisecond():
     ''' Current time in milliseconds '''
     return time() * 1000
@@ -543,9 +544,6 @@ in place of a number block)'),
         define_logo_function('tapensize', 'to tapensize\noutput first round \
 pensize\nend\n')
 
-    def _rgb_converter(self, r, g, b):
-        return float(self.tw.canvas.get_color_index(r, g, b))
-
     def _color_palette(self):
         ''' The basic Turtle Art color palette '''
 
@@ -562,18 +560,7 @@ pensize\nend\n')
                             _('black'))
         for name in color_names:
             self._make_constant(palette, name, _(name), name)
-        
-        palette.add_block('RGB to color',
-                        style='number-style-var-3arg',
-                        label=[_('RGB to\n\ncolor'), _('red'), _('green'), _('blue') ],
-                        default=[0, 0, 0],
-                        help_string=_('converter'),
-                        prim_name='converter')
-                        
-        self.tw.lc.def_prim(
-            'converter', 3,
-            Primitive(self._rgb_converter, return_type=TYPE_FLOAT, arg_descs=[ArgSlot(TYPE_INT), ArgSlot(TYPE_INT), ArgSlot(TYPE_INT)]))
-        
+
         # In order to map Turtle Art colors to the standard UCB Logo palette,
         # we need to define a somewhat complex set of functions.
         define_logo_function('tacolor', '\

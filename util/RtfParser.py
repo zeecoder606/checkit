@@ -145,3 +145,4 @@ class RtfTextOnly(RtfParser):
         if token[0:3] == 'par':
             self.par = True
         pass
+

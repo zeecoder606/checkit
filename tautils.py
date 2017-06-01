@@ -20,25 +20,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
-import tempfile
+import os
+import stat
 import dbus
 import cairo
 import pickle
-import subprocess
-import os
-import stat
 import string
+import subprocess
 import mimetypes
 from gettext import gettext as _
+
 from gi.repository import Gtk
-from gi.repository import Gobject
+from gi.repository import GConf
+from gi.repository import GObject
 from gi.repository import GdkPixbuf
-from gi.repository import Gconf
+
 import json
 json.dumps
 from json import load as jload
-from json import dump as jdump           
+from json import dump as jdump
+
 from StringIO import StringIO
 
 from taconstants import (HIT_HIDE, HIT_SHOW, XO1, XO15, XO175, XO4, UNKNOWN,
@@ -134,30 +135,29 @@ def magnitude(pos):
 
 def json_load(text):
     ''' Load JSON data using what ever resources are available. '''
-
-        # Remove MAGIC NUMBER, if present, and leading whitespace
-        if text[0:2] == MAGICNUMBER:
-            clean_text = text[2:].lstrip()
-        else:
-            clean_text = text.lstrip()
-        # Strip out trailing whitespace, nulls, and newlines
-        clean_text = clean_text.replace('\12', '')
-        clean_text = clean_text.replace('\00', '')
-        clean_text = clean_text.rstrip()
-        # Look for missing ']'s
-        left_count = clean_text.count('[')
+    # Remove MAGIC NUMBER, if present, and leading whitespace
+    if text[0:2] == MAGICNUMBER:
+        clean_text = text[2:].lstrip()
+    else:
+        clean_text = text.lstrip()
+    # Strip out trailing whitespace, nulls, and newlines
+    clean_text = clean_text.replace('\12', '')
+    clean_text = clean_text.replace('\00', '')
+    clean_text = clean_text.rstrip()
+    # Look for missing ']'s
+    left_count = clean_text.count('[')
+    right_count = clean_text.count(']')
+    while left_count > right_count:
+        clean_text += ']'
         right_count = clean_text.count(']')
-        while left_count > right_count:
-            clean_text += ']'
-            right_count = clean_text.count(']')
-        io = StringIO(clean_text)
-        try:
-            listdata = jload(io)
-        except ValueError:
-            # Assume that text is ascii list
-            listdata = text.split()
-            for i, value in enumerate(listdata):
-                listdata[i] = convert(value, float)
+    io = StringIO(clean_text)
+    try:
+        listdata = jload(io)
+    except ValueError:
+        # Assume that text is ascii list
+        listdata = text.split()
+        for i, value in enumerate(listdata):
+            listdata[i] = convert(value, float)
     # json converts tuples to lists, so we need to convert back,
     return _tuplify(listdata)
 
@@ -273,26 +273,18 @@ def get_id(connection):
 
 def json_dump(data):
     ''' Save data using available JSON tools. '''
-        io = StringIO()
-        jdump(data, io)
-        return io.getvalue()
-
-def get_endswith_files(path, end):
-    f = os.listdir(path)
-    files = []
-    for name in f:
-        if name.endswith(end):
-            files.append(os.path.join(path, name))
-    return files
+    io = StringIO()
+    jdump(data, io)
+    return io.getvalue()
 
 
 def get_load_name(filefilter, load_save_folder=None):
     ''' Open a load file dialog. '''
     dialog = Gtk.FileChooserDialog(
         _('Load...'), None,
-        Gtk.FILE_CHOOSER_ACTION_OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponeType.CANCEL,
-                                       Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-    dialog.set_default_response(Gtk.ResponeType.OK)
+        Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+    dialog.set_default_response(Gtk.ResponseType.OK)
     return do_dialog(dialog, filefilter, load_save_folder)
 
 
@@ -300,8 +292,8 @@ def get_save_name(filefilter, load_save_folder, save_file_name):
     ''' Open a save file dialog. '''
     dialog = Gtk.FileChooserDialog(
         _('Save...'), None,
-        Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponeType.CANCEL,
-                                       Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                     Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
     dialog.set_default_response(Gtk.ResponseType.OK)
     if filefilter in ['.png', '.svg', '.lg', '.py', '.odp']:
         suffix = filefilter
@@ -316,7 +308,7 @@ def get_save_name(filefilter, load_save_folder, save_file_name):
 
 def chooser_dialog(parent_window, filter, action):
     ''' Choose an object from the datastore and take some action '''
-    from sugar.graphics.objectchooser import ObjectChooser
+    from sugar3.graphics.objectchooser import ObjectChooser
 
     chooser = None
     dsobject = None
@@ -337,7 +329,7 @@ def chooser_dialog(parent_window, filter, action):
         if cleanup_needed:
             chooser.destroy()
             del chooser
-    Gobject.idle_add(action, dsobject)
+    GObject.idle_add(action, dsobject)
 
 
 def data_from_file(ta_file):
@@ -383,8 +375,7 @@ def data_to_file(data, ta_file):
             file_handle = file(tmp_file, 'w')
         except IOError as e:
             error_output('Could not write to %s: %s.' % (tmp_file, e))
-            tmp_file = os.path.join(tempfile.gettempdir(),
-                                                     os.path.basename(ta_file))
+            tmp_file = os.path.join('/tmp', os.path.basename(ta_file))
             try:
                 debug_output('Trying to write to %s' % (tmp_file))
                 file_handle = file(tmp_file, 'w')
@@ -412,7 +403,7 @@ def do_dialog(dialog, suffix, load_save_folder):
         dialog.set_current_folder(load_save_folder)
 
     response = dialog.run()
-    if response == Gtk.ResponseType.OK:
+    if response == Gtk.ResponseType:
         result = dialog.get_filename()
         load_save_folder = dialog.get_current_folder()
     dialog.destroy()
@@ -913,12 +904,9 @@ def _get_dmi(node):
 
 def get_screen_dpi():
     ''' Return screen DPI '''
-    try:
-        xft_dpi = Gtk.settings_get_default().get_property('gtk-xft-dpi')
-        dpi = float(xft_dpi / 1024)
-        return dpi
-    except:
-        return 100
+    xft_dpi = Gtk.Settings.get_default().get_property('gtk-xft-dpi')
+    dpi = float(xft_dpi / 1024)
+    return dpi
 
 
 def check_output(command, warning):
@@ -949,7 +937,6 @@ def power_manager_off(status):
          power_manager_off(True) --> Disable power manager
          power_manager_off(False) --> Use custom power manager
     '''
- 
     global FIRST_TIME
 
     OHM_SERVICE_NAME = 'org.freedesktop.ohm'
@@ -957,7 +944,7 @@ def power_manager_off(status):
     OHM_SERVICE_IFACE = 'org.freedesktop.ohm.Keystore'
     PATH = '/etc/powerd/flags/inhibit-suspend'
 
-    client = gconf.client_get_default()
+    client = GConf.Client.get_default()
 
     ACTUAL_POWER = True
 
@@ -972,7 +959,7 @@ def power_manager_off(status):
 
     try:
         client.set_bool('/desktop/sugar/power/automatic', VALUE)
-    except Gconf.GError:
+    except GConf.GError:
         pass
 
     bus = dbus.SystemBus()
@@ -996,8 +983,6 @@ def power_manager_off(status):
 
 def is_writeable(path):
     ''' Make sure we can write to the directory or file '''
-    return os.access(path, os.W_OK)
-    """
     if not os.path.exists(path):
         return False
     stats = os.stat(path)
@@ -1006,5 +991,3 @@ def is_writeable(path):
        (stats.st_mode & stat.S_IWOTH):
         return True
     return False
-    """
-
