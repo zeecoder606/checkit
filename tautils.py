@@ -20,25 +20,26 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
-import tempfile
+import os
+import stat
 import dbus
 import cairo
 import pickle
-import subprocess
-import os
-import stat
 import string
+import subprocess
 import mimetypes
 from gettext import gettext as _
+
 from gi.repository import Gtk
+from gi.repository import GConf
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
-from gi.repository import GConf
+
 import json
 json.dumps
 from json import load as jload
-from json import dump as jdump           
+from json import dump as jdump
+
 from StringIO import StringIO
 
 from taconstants import (HIT_HIDE, HIT_SHOW, XO1, XO15, XO175, XO4, UNKNOWN,
@@ -134,32 +135,31 @@ def magnitude(pos):
 
 def json_load(text):
     ''' Load JSON data using what ever resources are available. '''
-
-        # Remove MAGIC NUMBER, if present, and leading whitespace
-        if text[0:2] == MAGICNUMBER:
-            clean_text = text[2:].lstrip()
-        else:
-            clean_text = text.lstrip()
-        # Strip out trailing whitespace, nulls, and newlines
-        clean_text = clean_text.replace('\12', '')
-        clean_text = clean_text.replace('\00', '')
-        clean_text = clean_text.rstrip()
-        # Look for missing ']'s
-        left_count = clean_text.count('[')
+    # Remove MAGIC NUMBER, if present, and leading whitespace
+    if text[0:2] == MAGICNUMBER:
+        clean_text = text[2:].lstrip()
+    else:
+        clean_text = text.lstrip()
+    # Strip out trailing whitespace, nulls, and newlines
+    clean_text = clean_text.replace('\12', '')
+    clean_text = clean_text.replace('\00', '')
+    clean_text = clean_text.rstrip()
+    # Look for missing ']'s
+    left_count = clean_text.count('[')
+    right_count = clean_text.count(']')
+    while left_count > right_count:
+        clean_text += ']'
         right_count = clean_text.count(']')
-        while left_count > right_count:
-            clean_text += ']'
-            right_count = clean_text.count(']')
-        io = StringIO(clean_text)
-        try:
-            listdata = jload(io)
-        except ValueError:
-            # Assume that text is ascii list
-            listdata = text.split()
-            for i, value in enumerate(listdata):
-                listdata[i] = convert(value, float)
-        # json converts tuples to lists, so we need to convert back,
-        return _tuplify(listdata)
+    io = StringIO(clean_text)
+    try:
+        listdata = jload(io)
+    except ValueError:
+        # Assume that text is ascii list
+        listdata = text.split()
+        for i, value in enumerate(listdata):
+            listdata[i] = convert(value, float)
+    # json converts tuples to lists, so we need to convert back,
+    return _tuplify(listdata)
 
 
 def find_hat(data):
@@ -277,21 +277,13 @@ def json_dump(data):
     jdump(data, io)
     return io.getvalue()
 
-def get_endswith_files(path, end):
-    f = os.listdir(path)
-    files = []
-    for name in f:
-        if name.endswith(end):
-            files.append(os.path.join(path, name))
-    return files
-
 
 def get_load_name(filefilter, load_save_folder=None):
     ''' Open a load file dialog. '''
     dialog = Gtk.FileChooserDialog(
         _('Load...'), None,
         Gtk.FileChooserAction.OPEN, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                       Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
     dialog.set_default_response(Gtk.ResponseType.OK)
     return do_dialog(dialog, filefilter, load_save_folder)
 
@@ -301,7 +293,7 @@ def get_save_name(filefilter, load_save_folder, save_file_name):
     dialog = Gtk.FileChooserDialog(
         _('Save...'), None,
         Gtk.FileChooserAction.SAVE, (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                       Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+                                     Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
     dialog.set_default_response(Gtk.ResponseType.OK)
     if filefilter in ['.png', '.svg', '.lg', '.py', '.odp']:
         suffix = filefilter
@@ -383,8 +375,7 @@ def data_to_file(data, ta_file):
             file_handle = file(tmp_file, 'w')
         except IOError as e:
             error_output('Could not write to %s: %s.' % (tmp_file, e))
-            tmp_file = os.path.join(tempfile.gettempdir(),
-                                                     os.path.basename(ta_file))
+            tmp_file = os.path.join('/tmp', os.path.basename(ta_file))
             try:
                 debug_output('Trying to write to %s' % (tmp_file))
                 file_handle = file(tmp_file, 'w')
@@ -913,12 +904,9 @@ def _get_dmi(node):
 
 def get_screen_dpi():
     ''' Return screen DPI '''
-    try:
-        xft_dpi = Gtk.settings_get_default().get_property('gtk-xft-dpi')
-        dpi = float(xft_dpi / 1024)
-        return dpi
-    except:
-        return 100
+    xft_dpi = Gtk.Settings.get_default().get_property('gtk-xft-dpi')
+    dpi = float(xft_dpi / 1024)
+    return dpi
 
 
 def check_output(command, warning):
@@ -949,7 +937,6 @@ def power_manager_off(status):
          power_manager_off(True) --> Disable power manager
          power_manager_off(False) --> Use custom power manager
     '''
- 
     global FIRST_TIME
 
     OHM_SERVICE_NAME = 'org.freedesktop.ohm'
@@ -996,8 +983,6 @@ def power_manager_off(status):
 
 def is_writeable(path):
     ''' Make sure we can write to the directory or file '''
-    return os.access(path, os.W_OK)
-    """
     if not os.path.exists(path):
         return False
     stats = os.stat(path)
@@ -1006,5 +991,3 @@ def is_writeable(path):
        (stats.st_mode & stat.S_IWOTH):
         return True
     return False
-    """
-
