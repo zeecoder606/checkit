@@ -46,6 +46,7 @@ from buddy import get_owner_instance
 from buddy import BuddyModel
 
 from xocolor import XoColor
+
 from gi.repository import GObject
 
 ACCOUNT_MANAGER_SERVICE = 'org.freedesktop.Telepathy.AccountManager'
@@ -66,20 +67,21 @@ will be very slow in returning these queries, so just be patient.
 """
 
 
-class ActivityModel(Gobject.GObject):
+class ActivityModel(GObject.GObject):
+
     __gsignals__ = {
-        'current-buddy-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'current-buddy-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                 ([object])),
-        'current-buddy-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'current-buddy-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                   ([object])),
-        'buddy-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                         ([object])),
-        'buddy-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                           ([object])),
     }
 
     def __init__(self, activity_id, room_handle):
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.activity_id = activity_id
         self.room_handle = room_handle
@@ -96,7 +98,7 @@ class ActivityModel(Gobject.GObject):
     def set_color(self, color):
         self._color = color
 
-    color = Gobject.property(type=object, getter=get_color, setter=set_color)
+    color = GObject.property(type=object, getter=get_color, setter=set_color)
 
     def get_bundle(self):
         return self._bundle
@@ -104,7 +106,7 @@ class ActivityModel(Gobject.GObject):
     def set_bundle(self, bundle):
         self._bundle = bundle
 
-    bundle = Gobject.property(type=object, getter=get_bundle,
+    bundle = GObject.property(type=object, getter=get_bundle,
                               setter=set_bundle)
 
     def get_name(self):
@@ -113,7 +115,7 @@ class ActivityModel(Gobject.GObject):
     def set_name(self, name):
         self._name = name
 
-    name = Gobject.property(type=object, getter=get_name, setter=set_name)
+    name = GObject.property(type=object, getter=get_name, setter=set_name)
 
     def is_private(self):
         return self._private
@@ -121,7 +123,7 @@ class ActivityModel(Gobject.GObject):
     def set_private(self, private):
         self._private = private
 
-    private = Gobject.property(type=object, getter=is_private,
+    private = GObject.property(type=object, getter=is_private,
                                setter=set_private)
 
     def get_buddies(self):
@@ -137,7 +139,7 @@ class ActivityModel(Gobject.GObject):
         self.notify('buddies')
         self.emit('buddy-removed', buddy)
 
-    buddies = Gobject.property(type=object, getter=get_buddies)
+    buddies = GObject.property(type=object, getter=get_buddies)
 
     def get_current_buddies(self):
         return self._current_buddies
@@ -152,35 +154,35 @@ class ActivityModel(Gobject.GObject):
         self.notify('current-buddies')
         self.emit('current-buddy-removed', buddy)
 
-    current_buddies = Gobject.property(type=object, getter=get_current_buddies)
+    current_buddies = GObject.property(type=object, getter=get_current_buddies)
 
 
-class _Account(Gobject.GObject):
+class _Account(GObject.GObject):
     __gsignals__ = {
-        'activity-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'activity-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                            ([object, object])),
-        'activity-updated': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'activity-updated': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                              ([object, object])),
-        'activity-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'activity-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                              ([object])),
-        'buddy-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                         ([object, object, object])),
-        'buddy-updated': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-updated': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                           ([object, object])),
-        'buddy-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                           ([object])),
-        'buddy-joined-activity': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-joined-activity': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                   ([object, object])),
-        'buddy-left-activity': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-left-activity': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                                 ([object, object])),
-        'current-activity-updated': (Gobject.SIGNAL_RUN_FIRST,
-                                     Gobject.TYPE_NONE, ([object, object])),
-        'connected': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE, ([])),
-        'disconnected': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE, ([])),
+        'current-activity-updated': (GObject.SIGNAL_RUN_FIRST,
+                                     GObject.TYPE_NONE, ([object, object])),
+        'connected': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ([])),
+        'disconnected': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE, ([])),
     }
 
     def __init__(self, account_path):
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.object_path = account_path
 
@@ -626,19 +628,19 @@ class _Account(Gobject.GObject):
         pass
 
 
-class Neighborhood(Gobject.GObject):
+class Neighborhood(GObject.GObject):
     __gsignals__ = {
-        'activity-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'activity-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                            ([object])),
-        'activity-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'activity-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                              ([object])),
-        'buddy-added': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-added': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                         ([object])),
-        'buddy-removed': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'buddy-removed': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                           ([object])), }
 
     def __init__(self, params={}):
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self._buddies = {None: get_owner_instance()}
         self._activities = {}
@@ -721,7 +723,7 @@ class Neighborhood(Gobject.GObject):
 
         #print('Still dont have a Salut account, creating one')
 
-        client = Gconf.client_get_default()
+        client = GConf.Client.get_default()
         nick = client.get_string('/desktop/sugar/user/nick')
 
         params = {
@@ -1039,7 +1041,7 @@ if __name__ == "__main__":
     params["password"] = "test"
     params["register"] = True
 
-    loop = Gobject.MainLoop()
+    loop = GObject.MainLoop()
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     n = get_neighborhood(params)
     loop.run()

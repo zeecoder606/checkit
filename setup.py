@@ -6,6 +6,7 @@ def get_files(path):
     files = []
     for name in path:
         files.append(os.path.join(path, name))
+
     return files
 
 if len(sys.argv) > 1 and '--no-sugar' == sys.argv[1]:
@@ -86,3 +87,4 @@ else:
 
     if __name__ == "__main__":
         bundlebuilder.start()
+

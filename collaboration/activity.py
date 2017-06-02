@@ -26,7 +26,6 @@ from functools import partial
 
 import dbus
 from dbus import PROPERTIES_IFACE
-from gi.repository import GObject
 from telepathy.client import Channel
 from telepathy.interfaces import (CHANNEL,
                                   CHANNEL_INTERFACE_GROUP,
@@ -39,14 +38,15 @@ from telepathy.constants import (CHANNEL_GROUP_FLAG_CHANNEL_SPECIFIC_HANDLES,
                                  HANDLE_TYPE_CONTACT,
                                  PROPERTY_FLAG_WRITE)
 
+from gi.repository import GObject
 
 CONN_INTERFACE_ACTIVITY_PROPERTIES = 'org.laptop.Telepathy.ActivityProperties'
 CONN_INTERFACE_BUDDY_INFO = 'org.laptop.Telepathy.BuddyInfo'
 
-_logger = logging.getLogger('sugar.presence.activity')
+_logger = logging.getLogger('sugar3.presence.activity')
 
 
-class Activity(Gobject.GObject):
+class Activity(GObject.GObject):
 
     """UI interface for an Activity in the presence service
 
@@ -61,24 +61,24 @@ class Activity(Gobject.GObject):
         joined
     """
     __gsignals__ = {
-        'buddy-joined': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
-                         ([Gobject.TYPE_PYOBJECT])),
-        'buddy-left': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
-                       ([Gobject.TYPE_PYOBJECT])),
-        'new-channel': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
-                        ([Gobject.TYPE_PYOBJECT])),
-        'joined': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
-                   ([Gobject.TYPE_PYOBJECT, Gobject.TYPE_PYOBJECT])),
+        'buddy-joined': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
+                         ([GObject.TYPE_PYOBJECT])),
+        'buddy-left': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
+                       ([GObject.TYPE_PYOBJECT])),
+        'new-channel': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
+                        ([GObject.TYPE_PYOBJECT])),
+        'joined': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
+                   ([GObject.TYPE_PYOBJECT, GObject.TYPE_PYOBJECT])),
     }
 
     __gproperties__ = {
-        'id': (str, None, None, None, Gobject.PARAM_READABLE),
-        'name': (str, None, None, None, Gobject.PARAM_READWRITE),
-        'tags': (str, None, None, None, Gobject.PARAM_READWRITE),
-        'color': (str, None, None, None, Gobject.PARAM_READWRITE),
-        'type': (str, None, None, None, Gobject.PARAM_READABLE),
-        'private': (bool, None, None, True, Gobject.PARAM_READWRITE),
-        'joined': (bool, None, None, False, Gobject.PARAM_READABLE),
+        'id': (str, None, None, None, GObject.PARAM_READABLE),
+        'name': (str, None, None, None, GObject.PARAM_READWRITE),
+        'tags': (str, None, None, None, GObject.PARAM_READWRITE),
+        'color': (str, None, None, None, GObject.PARAM_READWRITE),
+        'type': (str, None, None, None, GObject.PARAM_READABLE),
+        'private': (bool, None, None, True, GObject.PARAM_READWRITE),
+        'joined': (bool, None, None, False, GObject.PARAM_READABLE),
     }
 
     def __init__(self, account_path, connection, room_handle=None,
@@ -89,7 +89,7 @@ class Activity(Gobject.GObject):
         if properties is None:
             properties = {}
 
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self._account_path = account_path
         self.telepathy_conn = connection
@@ -471,14 +471,15 @@ class Activity(Gobject.GObject):
         self.telepathy_text_chan.Close()
 
 
-class _BaseCommand(Gobject.GObject):
+class _BaseCommand(GObject.GObject):
+
     __gsignals__ = {
-        'finished': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'finished': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                      ([object])),
     }
 
     def __init__(self):
-        Gobject.GObject.__init__(self)
+        GObject.GObject.__init__(self)
 
         self.text_channel = None
         self.text_channel_group_flags = None

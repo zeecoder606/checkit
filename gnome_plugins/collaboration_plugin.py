@@ -27,9 +27,9 @@ import os.path
 import dbus
 from gettext import gettext as _
 
-from .plugin import Plugin
+from plugin import Plugin
 
-from TurtleArt.util.menubuilder import make_menu_item, make_sub_menu
+from TurtleArt.util.menubuilder import MenuBuilder
 from TurtleArt.util.configfile import ConfigFile
 from TurtleArt.util.configwizard import ConfigWizard
 
@@ -45,6 +45,7 @@ import traceback
 from gi.repository import Gtk
 from gi.repository import GObject
 
+
 CONNECTION_INTERFACE_ACTIVITY_PROPERTIES = \
     'org.laptop.Telepathy.ActivityProperties'
 
@@ -52,9 +53,9 @@ CONNECTION_INTERFACE_ACTIVITY_PROPERTIES = \
 class Collaboration_plugin(Plugin):
 
     __gsignals__ = {
-        'joined': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'joined': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                    ()),
-        'shared': (Gobject.SIGNAL_RUN_FIRST, Gobject.TYPE_NONE,
+        'shared': (GObject.SIGNAL_RUN_FIRST, GObject.TYPE_NONE,
                    ()), }
 
     def __init__(self, parent):
@@ -109,24 +110,24 @@ class Collaboration_plugin(Plugin):
     def get_menu(self):
         menu = Gtk.Menu()
 
-        make_menu_item(menu, _('Enable collaboration'),
+        MenuBuilder.make_menu_item(menu, _('Enable collaboration'),
                                    self._connect_cb)
 
         self._activities_submenu = Gtk.Menu()
-        activities_menu = make_sub_menu(self._activities_submenu,
+        activities_menu = MenuBuilder.make_sub_menu(self._activities_submenu,
                                                     _('Activities'))
         menu.append(activities_menu)
 
         self._buddies_submenu = Gtk.Menu()
-        buddies_menu = make_sub_menu(self._buddies_submenu,
+        buddies_menu = MenuBuilder.make_sub_menu(self._buddies_submenu,
                                                  _('Buddies'))
         menu.append(buddies_menu)
 
-        make_menu_item(menu, _('Share'), self._share_cb)
-        make_menu_item(menu, _('Configuration'),
+        MenuBuilder.make_menu_item(menu, _('Share'), self._share_cb)
+        MenuBuilder.make_menu_item(menu, _('Configuration'),
                                    self._config_neighborhood_cb)
 
-        neighborhood_menu = make_sub_menu(menu, _('Neighborhood'))
+        neighborhood_menu = MenuBuilder.make_sub_menu(menu, _('Neighborhood'))
 
         return neighborhood_menu
 
@@ -226,7 +227,7 @@ class Collaboration_plugin(Plugin):
             if key is None:
                 key = ''
             n = buddy.get_nick() + '|' + key[0:15]
-            make_menu_item(self._buddies_submenu, n,
+            MenuBuilder.make_menu_item(self._buddies_submenu, n,
                                        self._buddy_actions_cb, buddy)
 
     def _buddy_actions_cb(self, widget, buddy):
@@ -240,7 +241,7 @@ class Collaboration_plugin(Plugin):
 
         for activity in self._activities.values():
             n = activity.props.name
-            make_menu_item(self._activities_submenu, n,
+            MenuBuilder.make_menu_item(self._activities_submenu, n,
                                        self._join_activity_cb, activity)
 
     def _join_activity_cb(self, widget, activity):
@@ -346,6 +347,7 @@ class Collaboration_plugin(Plugin):
     def __share_activity_error_cb(self, activity, error):
         """Notify with GObject event of unsuccessful sharing of activity"""
         print '%s got error: %s' % (activity, error)
+
 
 if __name__ == '__main__':
     print 'testing collaboration'

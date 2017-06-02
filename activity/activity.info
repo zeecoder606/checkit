@@ -1,8 +1,8 @@
 [Activity]
-name = TurtleZEE
-activity_version = 215
+name = TurtleBlocks
+activity_version = 213
 license = MIT
-bundle_id = org.laptop.TURTLEArtActivitY
+bundle_id = org.laptop.TurtleArtActivity
 exec = sugar-activity TurtleArtActivity.TurtleArtActivity
 icon = activity-turtleart
 show_launcher = yes
@@ -10,4 +10,3 @@ website = http://wiki.sugarlabs.org/go/Activities/Turtle_Art
 mime_types = application/x-turtle-art;application/vnd.turtleblocks
 categories = programming art
 summary = A Logo-inspired turtle that draws colorful pictures with snap-together visual programming blocks
-repository = https://github.com/sugarlabs/turtleart

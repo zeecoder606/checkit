@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 import cairo
-import gi
-gi.require_version('Gtk' , '3.0')
-
 from gettext import gettext as _
 
 import os
@@ -61,15 +58,15 @@ class DummyTurtleMain(object):
         self.vbox = Gtk.VBox(False, 0)
         self.vbox.show()
         self.sw = Gtk.ScrolledWindow()
-        self.sw.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+        self.sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         self.sw.show()
         self.canvas = Gtk.DrawingArea()
-        width = Gdk.screen_width() * 2
-        height = Gdk.screen_height() * 2
+        width = Gdk.Screen.width() * 2
+        height = Gdk.Screen.height() * 2
         self.canvas.set_size_request(width, height)
         self.sw.add_with_viewport(self.canvas)
         self.canvas.show()
-        self.vbox.pack_end(self.sw, True, True, 0)
+        self.vbox.pack_end(self.sw, True, True)
         self.win.add(self.vbox)
         self.win.show_all()
 
@@ -87,15 +84,13 @@ class DummyTurtleMain(object):
             cr = cairo.Context(img_surface)
             surface = cr.get_target()
         self.turtle_canvas = surface.create_similar(
-            cairo.CONTENT_COLOR, max(1024, Gdk.screen_width() * 2),
-            max(768, Gdk.screen_height() * 2))
+            cairo.CONTENT_COLOR, max(1024, Gdk.Screen.width() * 2),
+            max(768, Gdk.Screen.height() * 2))
 
         # instantiate an instance of a dummy sub-class that supports only
         # the stuff TurtleGraphics needs
         # TODO don't hardcode running_sugar
-        share_path = _TA_INSTALLATION_PATH
         self.tw = TurtleArtWindow(self.canvas, _TA_INSTALLATION_PATH,
-                                  share_path,
                                   turtle_canvas=self.turtle_canvas,
                                   parent=self, running_sugar=False,
                                   running_turtleart=False)
@@ -109,7 +104,7 @@ class DummyTurtleMain(object):
         for plugin in self.tw.turtleart_plugins:
             if hasattr(plugin, 'quit'):
                 plugin.quit()
-        Gtk.main_quit()
+        Gdk.main_quit()
         exit()
 
 

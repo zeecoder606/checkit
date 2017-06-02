@@ -38,7 +38,7 @@ from gi.repository import Gtk
 from gi.repository import WebKit
 
 from plugin import Plugin
-from TurtleArt.util.menubuilder import make_menu_item, make_sub_menu, MENUBAR
+from TurtleArt.util.menubuilder import MenuBuilder, MENUBAR
 from gettext import gettext as _
 
 
@@ -82,11 +82,12 @@ class Fb_plugin(Plugin):
             upload_menu = None
             menu = Gtk.Menu()
 
-        make_menu_item(menu, _('Facebook wall post'), self._post_menu_cb)
+        MenuBuilder.make_menu_item(menu, _('Facebook wall post'),
+                                   self._post_menu_cb)
         if upload_menu is not None:
             return None  # We don't have to add it since it already exists
         else:
-            upload_menu = make_sub_menu(menu, _('Upload'))
+            upload_menu = MenuBuilder.make_sub_menu(menu, _('Upload'))
             return upload_menu
 
     def set_tw(self, turtleart_window):
@@ -96,7 +97,6 @@ class Fb_plugin(Plugin):
         return True
 
     def _post_menu_cb(self, widget):
-        
         if self._access_token == "":
             self._grab_fb_app_token()
             return
@@ -110,7 +110,7 @@ class Fb_plugin(Plugin):
         url = self._get_auth_url()
         w = Gtk.Window()
         sw = Gtk.ScrolledWindow()
-        sw.set_policy(Gtk.POLICY_AUTOMATIC, Gtk.POLICY_AUTOMATIC)
+        sw.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         sw.show()
         w.move(200, 200)
         w.set_size_request(800, 400)
