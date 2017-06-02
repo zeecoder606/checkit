@@ -24,24 +24,22 @@
 
 import gi
 gi.require_version("Gtk", "3.0")
-
 import os
 import sys
-import errno
 import subprocess
+import errno
 from gettext import gettext as _
 
 from gi.repository import Gtk
 from gi.repository import Gdk
-#from gi.repository import Gst
-from gi.repository import Pango
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
+from gi.repository import Pango
 from gi.repository import PangoCairo
 
-from sugar3.activity import activity
-
 _GST_AVAILABLE = False
+
+
 
 from random import uniform
 from math import atan2, pi
@@ -118,16 +116,16 @@ from tautils import (magnitude, get_load_name, get_save_name, data_from_file,
                       error_output, find_hat, find_bot_block,
                       restore_clamp, collapse_clamp, data_from_string,
                       increment_name, get_screen_dpi, is_writeable)
-from tasprite_factory import (SVG, svg_str_to_pixbuf, svg_from_file)
+from tasprite_factory import (svg_str_to_pixbuf, svg_from_file)
 from tapalette import block_primitives
 from tapaletteview import PaletteView
 from taselector import (Selector, create_toolbar_background)
 from sprites import (Sprites, Sprite)
 
-from util.menubuilder import MenuBuilder
+from util.menubuilder import make_checkmenu_item
 
 #if _GST_AVAILABLE:
-#    from .tagplay import stop_media
+#   from .tagplay import stop_media
 
 _MOTION_THRESHOLD = 6
 _SNAP_THRESHOLD = 200
@@ -305,7 +303,6 @@ class TurtleArtWindow():
         self.turtle_movement_to_share = None
         # Don't paste on top of where you copied.
         self.paste_offset = PASTE_OFFSET
-        self._icon_paths = []
 
         # common properties of all blocks (font size, decimal point, ...)
         self.block_list = Blocks(font_scale_factor=self.scale,
@@ -398,8 +395,8 @@ class TurtleArtWindow():
 
     def _set_screen_dpi(self):
         dpi = get_screen_dpi()
-        if self.hw in (XO1, XO15, XO175):
-            dpi = 133  # Tweak for XO display color mode
+        if self.hw in (XO1, XO15, XO175, XO4):
+            dpi = 133  # Tweek because of XO display peculiarities
         font_map_default = PangoCairo.font_map_get_default()
         font_map_default.set_resolution(dpi)
 
@@ -438,23 +435,21 @@ class TurtleArtWindow():
             plugin_path = turtleart_plugin_list[plugin_dir]
             # add icons paths of all plugins
             self._add_plugin_icon_dir(os.path.join(plugin_path, plugin_dir))
+            status = True
             if not self.running_sugar and hasattr(self.activity, 'client'):
-                status = False
                 gconf_path = self.activity._PLUGINS_PATH + plugin_dir
                 try:
                     status = (self.activity.client.get_int(gconf_path) == 1)
                 except:
                     pass
-                MenuBuilder.make_checkmenu_item(self.activity._plugin_menu, \
+                make_checkmenu_item(self.activity._plugin_menu, \
                          plugin_dir, self.activity._do_toggle_plugin_cb, status)
-            else:
-                status = True
-
             if status:
                 self.init_plugin(plugin_dir, plugin_path)
                 self.turtleart_favorites_plugins.append(plugin_dir)
         if not(self.running_sugar):
-            self.activity._plugin_menu.show_all()
+            if hasattr(self.activity, '_plugin_menu'):
+                self.activity._plugin_menu.show_all()
 
     def init_plugin(self, plugin_dir, plugin_path):
         ''' Initialize plugin in plugin_dir '''
@@ -567,23 +562,25 @@ class TurtleArtWindow():
         ''' Register the events we listen to. '''
         self.window.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window.add_events(Gdk.EventMask.BUTTON_RELEASE_MASK)
-        self.window.add_events(Gdk.EventMask.BUTTON_MOTION_MASK)
         self.window.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.window.add_events(Gdk.EventMask.KEY_PRESS_MASK)
         self.window.drag_dest_set(Gtk.DestDefaults.ALL, [],
                                   Gdk.DragAction.COPY)
         self.window.drag_dest_set_target_list(None)
         self.window.drag_dest_add_text_targets()
-
         self.window.connect('draw', self._draw_cb)
         self.window.connect('button-press-event', self._buttonpress_cb)
         self.window.connect('button-release-event', self._buttonrelease_cb)
         self.window.connect('motion-notify-event', self._move_cb)
         self.window.connect('key-press-event', self._keypress_cb)
         self.window.connect('drag_data_received', self._drag_data_received)
-        self.window.connect('event', lambda w, e: self.window.queue_draw())
+
         Gdk.Screen.get_default().connect('size-changed',
-                                         self._configure_cb)
+                                             self._configure_cb)
+
+     
+
+        
 
     def _show_unfullscreen_button(self):
         if self.activity._is_fullscreen and \
@@ -767,13 +764,16 @@ class TurtleArtWindow():
 
     def do_draw(self, cr):
         ''' Handle the expose-event by drawing '''
+
         # TODO: set global scale
         # find_sprite needs rescaled coordinates
         # sw needs new bounds set
         # cr.scale(self.activity.global_x_scale, self.activity.global_y_scale)
 
+      
         cr.rectangle(self.rect.x, self.rect.y,
-                     self.rect.width, self.rect.height)
+                         self.rect.width, self.rect.height)
+      
 
         if self.turtle_canvas is not None:
             cr.set_source_surface(self.turtle_canvas)
@@ -1039,14 +1039,15 @@ class TurtleArtWindow():
                 int(blocks[0].font_size[0] * Pango.SCALE * self.entry_scale))
             self._text_entry.modify_font(font_desc)
 
+    def _has_selectors(self):
+        return not self.running_sugar
+
     def show_toolbar_palette(self, n, init_only=False, regenerate=False,
                              show=True):
         ''' Show the toolbar palettes, creating them on init_only '''
         # If we are running the 0.86+ toolbar, the selectors are already
         # created, as toolbar buttons. Otherwise, we need to create them.
-        # Always has toolbar
-
-        if self.selectors == [] and self.activity is None:
+        if (not self.running_sugar) and self.selectors == []:
             # First, create the selector buttons
             self._create_the_selectors()
 
@@ -1069,9 +1070,9 @@ class TurtleArtWindow():
         self.previous_palette = self.selected_palette
 
         # Make sure all of the selectors are visible.
-        if show and len(self.selectors) > n:
+        if show and self._has_selectors():
             self.selected_selector = n
-            #self.selectors[n].set_shape(1)  # FIXME: Throw error
+            self.selectors[n].set_shape(1)
             for i in range(len(palette_blocks)):
                 self.selectors[i].set_layer()
 
@@ -1091,7 +1092,7 @@ class TurtleArtWindow():
 
     def regenerate_palette(self, n):
         ''' Regenerate palette (used by some plugins) '''
-        if self.activity is None and self.selectors == []:
+        if self._has_selectors() and self.selectors == []:
             return
         if self.palette_views == []:
             return
@@ -1112,49 +1113,13 @@ class TurtleArtWindow():
     def _create_the_selectors(self):
         ''' Create the palette selector buttons: only when running
         old-style Sugar toolbars or from GNOME '''
-        svg = SVG()
-        x, y = 50, 0  # positioned at the left, top
-        if self._icon_paths == []:
-            self._icon_paths.append(os.path.join(activity.get_bundle_path(), 'icons'))
-
-        for i, name in enumerate(palette_names):
-            for path in self._icon_paths:
-                if os.path.exists(os.path.join(path, '%soff.svg' % (name))):
-                    icon_pathname = os.path.join(path, '%soff.svg' % (name))
-                    break
-            if icon_pathname is not None:
-                off_shape = svg_str_to_pixbuf(svg_from_file(icon_pathname))
-            else:
-                off_shape = svg_str_to_pixbuf(svg_from_file(os.path.join(
-                            self._icon_paths[0], 'extrasoff.svg')))
-                error_output('Unable to open %soff.svg' % (name),
-                             self.running_sugar)
-            for path in self._icon_paths:
-                if os.path.exists(os.path.join(path, '%son.svg' % (name))):
-                    icon_pathname = os.path.join(path, '%son.svg' % (name))
-                    break
-            if icon_pathname is not None:
-                on_shape = svg_str_to_pixbuf(svg_from_file(icon_pathname))
-            else:
-                on_shape = svg_str_to_pixbuf(svg_from_file(os.path.join(
-                            self._icon_paths[0], 'extrason.svg')))
-                error_output('Unable to open %son.svg' % (name),
-                             self.running_sugar)
-
-            selector = Sprite(self.sprite_list, x, y, off_shape)
-            selector.type = 'selector'
-            selector.name = name
-            selector.set_layer(TAB_LAYER)
-            self.selectors.append(selector)
-
-            x += int(selector.get_dimensions()[0])  # running from left to right
+        for i in range(len(palette_names)):
+            self.selectors.append(Selector(self, i))
 
         # Create the toolbar background for the selectors
         self.toolbar_offset = ICON_SIZE
-        self.toolbar_spr = Sprite(self.sprite_list, 0, 0,
-            svg_str_to_pixbuf(svg.toolbar(2 * self.width, ICON_SIZE)))
-        self.toolbar_spr.type = 'toolbar'
-        self.toolbar_spr.set_layer(CATEGORY_LAYER)
+        self.toolbar_spr = create_toolbar_background(self.sprite_list,
+                                                     self.width)
 
     def _create_the_empty_palettes(self):
         ''' Create the empty palettes to be populated by prototype blocks. '''
@@ -1251,9 +1216,8 @@ class TurtleArtWindow():
         # Hide previously selected palette
         if palette is not None:
             self.palette_views[palette].hide()
-            if self.activity is not None and len(self.selectors) > palette:
-                #self.selectors[palette].set_shape(0)
-                pass
+            if self._has_selectors():
+                self.selectors[palette].set_shape(0)
 
     def _buttonpress_cb(self, win, event):
         ''' Button press '''
@@ -1568,7 +1532,7 @@ class TurtleArtWindow():
     def _overwrite_stack_dialog_response_cb(self, alert, response_id,
                                             data, macro_path):
         self.activity.remove_alert(alert)
-        if response_id == Gtk.RESPONSE_OK:
+        if response_id == Gtk.ResponseType.OK:
             self._save_stack(data, macro_path)
 
     def _save_stack(self, data, macro_path):
@@ -1660,7 +1624,6 @@ class TurtleArtWindow():
                     if not self.running_sugar:
                         self._select_category(self.selectors[i].spr)
                     else:
-                        # select radio button associated with this palette
                         self.activity.palette_buttons[i].set_active(True)
                         self.show_palette(i)
                 elif spr.name == _('shift'):
@@ -1981,7 +1944,7 @@ class TurtleArtWindow():
             self.activity.empty_trash_alert(title, msg)
         else:
             dialog = Gtk.MessageDialog(None, 0, Gtk.MessageType.WARNING,
-                                       Gtk.ButtonsType.OK_CANCEL, msg)
+                                      Gtk.ButtonsType.OK_CANCEL, msg)
             dialog.set_title(title)
             res = dialog.run()
             dialog.destroy()
@@ -2070,7 +2033,7 @@ class TurtleArtWindow():
             self.paste_offset = 20
 
             self.parent.get_window().set_cursor(
-                Gdk.Cursor(Gdk.CursorType.LEFT_PTR))
+               Gdk.Cursor(Gdk.CursorType.LEFT_PTR))
             self.saving_blocks = False
 
             if self.running_sugar and self._sharing and \
@@ -2451,7 +2414,7 @@ class TurtleArtWindow():
                 [nick,
                  [round_int(self.turtles.get_active_turtle().get_xy()[0]),
                   round_int(self.turtles.get_active_turtle().get_xy()[1])]])})
-            if put_pen_back_down:
+           if put_pen_back_down:
                 self.send_event("p", {"payload", data_to_string([nick, True])})
         self.turtle_movement_to_share = None
 
@@ -3752,7 +3715,7 @@ class TurtleArtWindow():
         ''' Make sure a 'number' block contains a number. '''
         if hasattr(self, '_text_entry'):
             bounds = self._text_buffer.get_bounds()
-            text = self._text_buffer.get_text(bounds[0], bounds[1], True)
+            text = self._text_buffer.get_text(bounds[0], bounds[1])
             self._hide_text_entry()
         else:
             text = self.selected_blk.spr.labels[0]
@@ -3811,7 +3774,7 @@ class TurtleArtWindow():
     def _test_string(self):
         if hasattr(self, '_text_entry'):
             bounds = self._text_buffer.get_bounds()
-            text = self._text_buffer.get_text(bounds[0], bounds[1], True)
+            text = self._text_buffer.get_text(bounds[0], bounds[1])
             self._hide_text_entry()
         else:
             text = self.selected_blk.spr.labels[0]
@@ -4220,7 +4183,7 @@ class TurtleArtWindow():
                 if not movie_media_type(blk.values[0][-4:]):
                     try:
                         w, h, = calc_image_size(blk.spr)
-                        pixbuf = GdkPixbuf.Pixbuf.ixbuf.new_from_file_at_size(
+                        pixbuf = GdkPixbuf.pixbuf.new_from_file_at_size(
                             blk.values[0], w, h)
                         x, y = self.calc_image_offset('', blk.spr)
                         blk.set_image(pixbuf, x, y)
@@ -4729,6 +4692,44 @@ class TurtleArtWindow():
         fil.write(svg_text)
         fil.close()
 
+    def save_blocks_as_image(self):
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32,
+                                     self.canvas.width, self.canvas.height)
+        context = cairo.Context(surface)
+        s = Sprites(self.window)
+        s.set_cairo_context(context)
+        blocks = self.just_blocks()
+        for block in blocks:
+            s.append_to_list(block.spr)
+        s.redraw_sprites(cr=context)
+
+        if self.running_sugar:
+            datapath = get_path(self.activity, 'instance')
+            filename = _('%s blocks image' % (self.activity.metadata['title']))
+            file_path = os.path.join(datapath, filename + '.png')
+
+            surface.write_to_png(file_path)
+
+            from sugar.datastore import datastore
+            from sugar import profile
+
+            dsobject = datastore.create()
+            dsobject.metadata['title'] = filename
+            dsobject.metadata['icon-color'] = profile.get_color().to_string()
+            dsobject.metadata['mime_type'] = 'image/png'
+            dsobject.set_file_path(file_path)
+            datastore.write(dsobject)
+            dsobject.destroy()
+        else:
+            datapath = os.getcwd()
+            filename = 'turtleblocks'
+            if self.save_folder is not None:
+                datapath = self.save_folder
+            filename, datapath = get_save_name('.png', datapath, filename)
+            file_path = os.path.join(datapath, filename)
+
+            surface.write_to_png(file_path)
+
     def save_as_image(self, name='', svg=False):
         ''' Grab the current canvas and save it. '''
         if svg:
@@ -5146,4 +5147,3 @@ variable'))
                 self.show_toolbar_palette(palette_name_to_index(arg))
             else:
                 raise logoerror("#syntaxerror")
-
