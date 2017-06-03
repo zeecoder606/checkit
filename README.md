@@ -1,4 +1,4 @@
-TurtleBlocks
+ZeeBlocks
 ============
 
 Turtle Art, also known as Turtle Blocks, is an activity with a
