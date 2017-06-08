@@ -22,26 +22,33 @@
 # THE SOFTWARE.
 
 import os
-import tempfile
 import urllib2
-from time import time, sleep
-from operator import isNumberType
+import tempfile
 from os.path import exists as os_path_exists
-from UserDict import UserDict
+from gettext import gettext as _
+from time import time, sleep
 
-from gi.repository import Gtk
 from gi.repository import GObject
 from gi.repository import GdkPixbuf
 
-try:
-    from sugar3.graphics import style
-    GRID_CELL_SIZE = style.GRID_CELL_SIZE
-except ImportError:
-    GRID_CELL_SIZE = 55 
+from operator import isNumberType
+from UserDict import UserDict
 
 USER_HOME = os.path.expanduser('~')
 
 import traceback
+
+from taconstants import TAB_LAYER, DEFAULT_SCALE
+from tapalette import block_names, value_blocks
+from tautils import get_pixbuf_from_journal, convert, data_from_file, \
+    text_media_type, round_int, debug_output, find_group
+from tagplay import stop_media, media_playing, pause_media, \
+    play_audio_from_file, play_movie_from_file
+
+from util.RtfParser import RtfTextOnly
+
+from sugar3.graphics import style
+GRID_CELL_SIZE = style.GRID_CELL_SIZE
 
 from tablock import (Block, Media, media_blocks_dictionary)
 from taconstants import (TAB_LAYER, DEFAULT_SCALE, ICON_SIZE, Color)
@@ -59,8 +66,6 @@ try:
     RTFPARSE = True
 except ImportError:
     RTFPARSE = False
-
-from gettext import gettext as _
 
 primitive_dictionary = {}  # new block primitives get added here
 
@@ -1129,7 +1134,7 @@ class LogoCode:
         elif user_path is not None and os.path.exists(user_path):
             self.filepath = user_path
         elif self.tw.running_sugar:  # datastore object
-            from suga3.datastore import datastore
+            from sugar3.datastore import datastore
             try:
                 self.dsobject = datastore.get(obj.value)
             except:
@@ -1163,7 +1168,7 @@ class LogoCode:
             if self.tw.running_sugar:
                 tmp_path = get_path(self.tw.activity, 'instance')
             else:
-                tmp_path = tempfile.gettempdir()
+                tmp_path = '/tmp'
             tmp_file = os.path.join(get_path(self.tw.activity, 'instance'),
                                     'tmpfile.png')
             pixbuf.save(tmp_file, 'png', {'quality': '100'})
